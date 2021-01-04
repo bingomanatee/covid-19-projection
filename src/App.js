@@ -1,6 +1,5 @@
-import React from "react";
-import "./styles.css";
-import getRawData from "./get-raw-data";
+import React from 'react';
+import './styles.css';
 import {
   Grommet,
   Button,
@@ -8,27 +7,39 @@ import {
   Main,
   Heading,
   Header,
-  Paragraph
-} from "grommet";
-import theme from "./theme.json";
+  Paragraph,
+} from 'grommet';
+import getRawData from './get-raw-data';
+import theme from './theme';
+import store from './store';
+import Content from './Content';
+
 getRawData().then((branch) => {
-  console.log("branch", branch);
+  console.log('branch', branch);
 });
 export default function App() {
   return (
     <Grommet theme={theme}>
       <Header background="neutral-3">
-        <Button
-          label="hello world"
-          primary
-          onClick={() => alert("hello, world")}
-        />
+        <Box
+          direction="row"
+          justify="between"
+          fill="horizontal"
+        >
+          <Button
+            label="COVID-19 Projection"
+            onClick={() => store.do.setPath('home')}
+          />
+          {' '}
+          <Button
+            label="About This Page"
+            onClick={() => store.do.setPath('about')}
+          />
+        </Box>
+
       </Header>
-      <Main id="main-item" align="center" background="neutral-3">
-        <Heading id="header-item"> The Header</Heading>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-          <Paragraph>{n}</Paragraph>
-        ))}
+      <Main id="main-item" align="center" background="neutral-3" align="stretch">
+        <Content />
       </Main>
     </Grommet>
   );
