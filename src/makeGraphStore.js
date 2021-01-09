@@ -32,6 +32,7 @@ export default function makeGraphStore(width, height) {
     cursor: null,
     dateLabel: null,
     deadLabel: null,
+    drawing: false,
     height,
     width,
     timeSensors: [],
@@ -54,16 +55,16 @@ export default function makeGraphStore(width, height) {
       if ((typeof t === 'object') && ('time' in t)) {
         t = t.time;
       }
-      console.log('extDeathAtTime at time: ', t);
+
       const max = store.do.maxDate();
       const milliseconds = t - max.time;
       const base = store.do.deathsAtTime(max.time);
-      console.log('slope:', gs.do.deathSlope(), 'ms:', milliseconds, 'slope', gs.do.deathSlope());
+
       return Math.round(base + (milliseconds * gs.do.deathSlope()));
     },
     maxX(gs) {
       const t = store.do.maxDate().time;
-      console.log('time for max x:', t);
+
       return gs.do.timeToX(t, true);
     },
     timeToX(gs, time) {
@@ -76,7 +77,6 @@ export default function makeGraphStore(width, height) {
       }
 
       if (!(typeof time === 'number')) {
-        console.error('bad time in timeToX', time);
         return 0;
       }
 
@@ -293,7 +293,7 @@ export default function makeGraphStore(width, height) {
       } else {
         dead = store.do.deathsAtTime(date.time);
       }
-      console.log('dead:', dead, 'date:', date);
+
       if (Number.isNaN(dead)) return;
       if (gs.my.dateLabel) {
         gs.my.dateLabel.tspan(formatDate(date, true));
@@ -302,8 +302,12 @@ export default function makeGraphStore(width, height) {
     },
 
     drawGraph(gs) {
+      if (gs.my.drawing) {
+        return;
+      }
+      gs.do.setDrawing(true);
       gs.my.svg.clear();
-      console.log('series:', store.my.summary.series);
+
       if (store.my.summary.series.size) {
         gs.do.drawLine();
       }
@@ -311,6 +315,7 @@ export default function makeGraphStore(width, height) {
       if (store.my.dates.size) {
         gs.do.drawDates();
       }
+      gs.do.setDrawing(false);
     },
   });
 }
