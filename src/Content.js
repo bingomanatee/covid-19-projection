@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Heading, Main, Paragraph } from 'grommet';
 import store from './store';
-import Home from './Home';
+import Mortality from './Mortality';
 import About from './About';
 
 export default () => {
@@ -10,7 +10,6 @@ export default () => {
   useEffect(() => {
     const sub = store.subscribe(
       (map) => {
-        console.log('--- store --- map = ', map);
         if (page !== map.get('page')) {
           setPage(map.get('page'));
         }
@@ -26,7 +25,7 @@ export default () => {
 
   switch (page) {
     case 'home':
-      PageComponent = Home;
+      PageComponent = Mortality;
       break;
 
     case 'about':
