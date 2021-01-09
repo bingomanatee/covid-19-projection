@@ -307,6 +307,7 @@ export default function makeGraphStore(width, height) {
       }
       gs.do.setDrawing(true);
       gs.my.svg.clear();
+      gs.my.svg.size(gs.my.width, gs.my.height);
 
       if (store.my.summary.series.size) {
         gs.do.drawLine();
