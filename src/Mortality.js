@@ -4,7 +4,7 @@ import { Paragraph as P, Heading as H, markdown, Grid, Box } from 'grommet';
 import Graph from './Graph';
 
 export default () => (
-  <Grid rows={['auto', '1fr']} fill="true">
+  <Grid rows={['auto', '1fr']} fill="true" height="100%">
     <Box>
       <H textAlign="center" weight={800} level={1}>Mortality Rates</H>
       <P align="center">
