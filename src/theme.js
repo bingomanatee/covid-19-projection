@@ -27,7 +27,7 @@ export default {
       placeholder: '#AAAAAA',
       selected: 'brand',
       text: {
-        dark: '#f8f8f8',
+        dark: 'black',
         light: '#444444',
       },
       white: '#FFFFFF',

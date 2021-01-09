@@ -9,7 +9,7 @@ import sortBy from 'lodash/sortBy';
 import store from './store';
 import getRawData from './get-raw-data';
 import DateRange from './DateRange';
-import Graph from './Graph';
+import Mortality from './Mortality';
 
 const DATE_RE = /(.*)\/(.*)\/(.*)/;
 
@@ -126,14 +126,10 @@ export default () => {
     max = range.pop();
   }
   return (
-    <Box pad="medium">
-      <Heading level={1}>COVID-19 Projection</Heading>
-      <Paragraph>
-        The following is current COVID-19 Data projected into the near future.
-      </Paragraph>
+    <>
       {(!homeStore.my.drawn) ? (
         <Layer plain>
-          <Paragraph textAlign={"center"}>
+          <Paragraph textAlign="center">
             <Loader type="Oval" color="#0066E1" height={200} width={200} />
             Drawing COVID-19 Graph -- please wait.
             <br />
@@ -141,10 +137,11 @@ export default () => {
           </Paragraph>
         </Layer>
       ) : '' }
-      {homeStore.my.rawDataLoadStatus === 'loaded' ? <DateRange min={min} max={max} /> : null}
+      {' '}
 
-      <Graph homeStore={homeStore} />
-    </Box>
+      {homeStore.my.rawDataLoadStatus === 'loaded' ? <DateRange min={min} max={max} /> : null}
+      <Mortality homeStore={homeStore} />
+    </>
   );
 };
 

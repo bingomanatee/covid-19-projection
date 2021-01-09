@@ -25,12 +25,13 @@ export default function App() {
         >
           <Button
             label="COVID-19 Projection"
-            onClick={() => store.do.setPath('home')}
+            onClick={() => store.do.setPage('home')}
           />
-          {' '}
           <Button
             label="About This Page"
-            onClick={() => store.do.setPath('about')}
+            onClick={() => {
+              store.do.setPage('about');
+            }}
           />
         </Box>
 

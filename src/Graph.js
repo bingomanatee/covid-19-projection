@@ -1,6 +1,6 @@
 /* eslint-disable no-param-reassign */
 import React, { useState, useRef, useEffect } from 'react';
-import { Box } from 'grommet';
+import { Box, Header, Paragraph as P } from 'grommet';
 import sizeMe from 'react-sizeme';
 import dayjs from 'dayjs';
 import SVG from 'svg.js';
@@ -41,9 +41,6 @@ const Graph = ({ homeStore, size }) => {
       summarizing: false,
       dates: new Map(),
     }), {
-      draw(thisStore) {
-        console.log('drawing store');
-      },
 
       orderedDates(gs) {
         return sortBy([...gs.my.dates.values()], 'time');
@@ -90,14 +87,12 @@ const Graph = ({ homeStore, size }) => {
       sumData(gs) {
         if (gs.my.summarizing) return;
         if (!gs.my.dates.size) {
-          console.log('-------- sumData: no dates:', gs.my.dates.size, gs.my.dates);
           return;
         }
         if (!gs.my.data.length) {
-          console.log('--------- sumData: no data', gs.my.data.length, gs.my.data);
           return;
         }
-        console.log('sumData data....', gs.my.dates);
+
         gs.do.setSummarizing(true);
 
         const dateKeys = Array.from(gs.my.dates.keys());
@@ -109,29 +104,19 @@ const Graph = ({ homeStore, size }) => {
           if (!summary.has(key)) {
             summary.set(key, amount);
           } else summary.set(key, amount + summary.get(key));
-          if (Math.random() < 0.01) {
-            console.log('updated summary count to ', key, summary.get(key));
-          }
         };
 
         gs.my.data.forEach((location) => {
-          if (Math.random() < 0.01) {
-            console.log('summing', location, 'with', dateKeys);
-          }
           dateKeys.forEach((key) => {
             if (key in location) {
               const amount = location[key];
               if (amount === '0') return;
-              if (Math.random() < 0.01) console.log(location.uuid, 'count on ', key, 'is', amount);
               updateCount(key, Number.parseInt(amount, 10));
-            } else {
-              console.log('no ', key, 'in', location);
             }
           });
         });
 
         gs.do.setSummary(summary);
-        console.log('.... done sumData');
         gs.do.setSummarizing(false);
         gs.do.drawGraph();
       },
@@ -157,7 +142,6 @@ const Graph = ({ homeStore, size }) => {
 
           if (gs.my.summary.has(date.key)) {
             const amount = gs.my.summary.get(date.key);
-            console.log('amount  for key', date.key, 'is', amount);
             gs.my.svg.text((a) => a.tspan(`${humNum(amount)}`)).x(x).cy(20)
               .font({
                 fill: DEATH_COLOR,
@@ -165,8 +149,6 @@ const Graph = ({ homeStore, size }) => {
                 size: 16,
                 anchor: 'center',
               });
-          } else {
-            console.log('no amount for key', date.key);
           }
           nextX = x + text.node.getBBox().width + 10;
 
@@ -222,9 +204,9 @@ const Graph = ({ homeStore, size }) => {
         }
         const rects = [];
         coordinates.forEach((coord, index) => {
-          if (!index || !coord.deaths) return;
+          if (!index || (index % 2)  ||!coord.deaths) return;
 
-          const lastCoord = coordinates[index - 1];
+          const lastCoord = coordinates[index - 2];
           const height = Math.max(1, gs.my.height - coord.y);
           const width = Math.ceil(coord.x - lastCoord.x);
 
@@ -358,7 +340,7 @@ const Graph = ({ homeStore, size }) => {
   }, [graphStore, boxRef.current]);
 
   return (
-    <Box border={{ width: '1px', color: 'black' }} background="white" ref={boxRef} height="50vh" />
+      <Box border={{ width: '1px', color: 'black' }} background="white" ref={boxRef} height="50vh" />
   );
 };
 
