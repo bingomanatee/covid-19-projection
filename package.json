@@ -9,14 +9,18 @@
     "axios": "0.21.1",
     "babel-plugin-styled-components": "^1.12.0",
     "csv-parse": "4.14.2",
+    "dayjs": "^1.10.2",
     "github-api": "3.3.0",
     "grommet": "2.16.2",
+    "humanize-number": "0.0.2",
     "lodash": "^4.17.20",
     "react": "17.0.0",
     "react-dom": "17.0.0",
     "react-loader-spinner": "^3.1.14",
     "react-scripts": "3.4.3",
-    "styled-components": "5.2.1"
+    "react-sizeme": "^2.6.12",
+    "styled-components": "5.2.1",
+    "svg.js": "^2.7.1"
   },
   "devDependencies": {
     "babel-loader": "^8.2.2",

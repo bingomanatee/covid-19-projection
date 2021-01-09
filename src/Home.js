@@ -9,6 +9,7 @@ import sortBy from 'lodash/sortBy';
 import store from './store';
 import getRawData from './get-raw-data';
 import DateRange from './DateRange';
+import Graph from './Graph';
 
 const DATE_RE = /(.*)\/(.*)\/(.*)/;
 
@@ -38,23 +39,25 @@ export default () => {
       dates: new Map(),
       loadError: null,
       regions: new Map(),
+      drawn: false,
     }),
     {
       parseDates(theStore) {
         const dates = new Map();
-        console.log('parsing dates from ', theStore.my.rawData);
+        //  console.log('parsing dates from ', theStore.my.rawData);
         let noNewDates = 0;
         theStore.my.rawData.forEach((row) => {
           if (noNewDates > 4) return;
           let foundNew = false;
           Object.keys(row).forEach((key) => {
             if (dates.has(key)) return;
-            console.log('key:', key);
+            //  console.log('key:', key);
             if (DATE_RE.test(key)) {
               foundNew = true;
               const [_, month, date, year] = DATE_RE.exec(key);
               const data = {
                 label: key,
+                key,
                 month: Number.parseInt(month, 10),
                 date: Number.parseInt(date, 10),
                 year: Number.parseInt(year, 10) + 2000,
@@ -67,7 +70,7 @@ export default () => {
           if (!foundNew) ++noNewDates;
         });
 
-        console.log('found dates:', dates);
+        // console.log('found dates:', dates);
         const dateList = sortBy([...dates.values()], 'time');
 
         theStore.do.setDates(dates);
@@ -76,7 +79,6 @@ export default () => {
           theStore.do.addRegionData(row);
         });
       },
-
       addRegionData(theStore, row) {
         const data = new Map(theStore.my.regions);
         const item = new RowDataItem(row, theStore.my.dates);
@@ -88,12 +90,11 @@ export default () => {
         theStore.do.setRawDataLoadStatus('laoding');
         try {
           const rawData = await getRawData();
-          console.log('---- raw data:', rawData);
           theStore.do.setRawData(rawData);
           theStore.do.parseDates();
           theStore.do.setRawDataLoadStatus('loaded');
         } catch (err) {
-          console.log('---- error:', err);
+        //  console.log('---- error:', err);
           theStore.do.setRawDataLoadStatus('error');
           theStore.do.setLoadError(err);
         }
@@ -119,7 +120,7 @@ export default () => {
   let min = 0;
   let max = 0;
   if (homeStore.my.dates.size) {
-    const range = [...homeStore.my.dates.values()].map(({time}) => time);
+    const range = [...homeStore.my.dates.values()].map(({ time }) => time);
     range.sort();
     min = range.shift();
     max = range.pop();
@@ -130,12 +131,19 @@ export default () => {
       <Paragraph>
         The following is current COVID-19 Data projected into the near future.
       </Paragraph>
-      {(homeStore.my.rawDataLoadStatus === 'loading') ? (
+      {(!homeStore.my.drawn) ? (
         <Layer plain>
-          <Loader type="Oval" color="#0066E1" height={200} width={200} />
+          <Paragraph textAlign={"center"}>
+            <Loader type="Oval" color="#0066E1" height={200} width={200} />
+            Drawing COVID-19 Graph -- please wait.
+            <br />
+            Data Loading from latest sources.
+          </Paragraph>
         </Layer>
       ) : '' }
       {homeStore.my.rawDataLoadStatus === 'loaded' ? <DateRange min={min} max={max} /> : null}
+
+      <Graph homeStore={homeStore} />
     </Box>
   );
 };

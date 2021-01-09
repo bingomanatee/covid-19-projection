@@ -14,9 +14,6 @@ import theme from './theme';
 import store from './store';
 import Content from './Content';
 
-getRawData().then((branch) => {
-  console.log('branch', branch);
-});
 export default function App() {
   return (
     <Grommet theme={theme}>

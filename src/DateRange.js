@@ -11,7 +11,7 @@ export default ({ min, max }) => {
 
   if (min < max) {
     return (
-      <>
+      <Box height="3rem" margin="medium">
         <Box direction="row" justify="between">
           <span>{new Date(min).toUTCString(true)}</span>
           <span>{new Date(max).toUTCString(true)}</span>
@@ -29,7 +29,7 @@ export default ({ min, max }) => {
             setValues(newValues);
           }}
         />
-      </>
+      </Box>
     );
   }
   return '';
