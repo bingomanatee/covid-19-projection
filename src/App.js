@@ -76,11 +76,16 @@ export default function App() {
               onClick={() => store.do.setPage('home')}
             />
             <Button
-              label="About This Page"
+              label="Source Data (table)"
               onClick={() => {
-                store.do.setPage('about');
+                store.do.setPage('data');
               }}
-            />
+            />          <Button
+            label="About This Page"
+            onClick={() => {
+              store.do.setPage('about');
+            }}
+          />
           </Box>
 
         </Header>

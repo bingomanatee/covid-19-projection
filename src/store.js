@@ -1,7 +1,9 @@
 /* eslint-disable camelcase */
 import sortBy from 'lodash/sortBy';
+import groupBy from 'lodash/groupBy';
 import { addActions, ValueMapStream } from '@wonderlandlabs/looking-glass-engine';
 import { clamp, sumBy } from 'lodash';
+import dayjs from 'dayjs';
 import getRawData from './get-raw-data';
 import Region from './Region';
 
@@ -22,11 +24,30 @@ const store = addActions(new ValueMapStream({
   regions: new Map(),
   regionLoadStatus: 'not loaded',
   lastRegionSummarized: '',
-  summary: new Region({ UID: 'total' }),
+  summary: new Region({ UID: 'Total' }),
   extrapolation: new Region({ UID: 'extrapolation' }),
   summarizeStatus: 'not summarized',
 }),
 {
+  dataTable(ss) {
+    const dates = ss.do.firstOfMonths();
+    const rows = [];
+    ss.my.regions.forEach((region) => {
+      rows.push(region.toData(dates));
+    });
+
+    rows.push(ss.my.summary.toData(dates));
+    return {
+      dates, rows,
+    };
+  },
+  firstOfMonths(ss) {
+    const byMonth = groupBy(ss.do.orderedDates(), ({ date }) => dayjs(date).format('MMM YY'));
+    return sortBy([...Object.values(byMonth)].reduce((list, dates) => {
+      const first = sortBy(dates, 'time').shift();
+      return [...list, first];
+    }, [ss.do.maxDate()]), 'time');
+  },
   dateKeys(ss) {
     return Array.from(ss.my.dates.keys());
   },
@@ -150,36 +171,12 @@ const store = addActions(new ValueMapStream({
     const exactDate = dates.find((d) => d.time === time);
 
     if (exactDate && ss.my.summary.series.has(exactDate.label)) {
-      return ss.my.summary.series.get(exactDate.label);
+      const deaths = ss.my.summary.series.get(exactDate.label);
+      console.log('deaths at time ', time, ' -- exact:', exactDate, 'deaths = ', deaths);
+      return deaths;
     }
 
-    let series = dates.reduce((out, date) => {
-      if (ss.my.summary.series.has(date.label)) {
-        out.push({
-          ...date, deaths: ss.my.summary.series.get(date.label),
-        });
-      }
-      return out;
-    }, []);
-
-    if (time < series[0].time) return 0;
-    if (time > series[series.length - 1].time) return series[series.length - 1].deaths;
-    const match = series.find((item) => item.time === time);
-    if (match) return match.deaths;
-
-    while (series.length > 2) {
-      const midIndex = clamp(Math.round(series.length / 2), 1, series.length - 2);
-      const mid = series[midIndex];
-      if (mid.time > time) {
-        series = series.slice(0, midIndex);
-      }
-      if (mid.time === time) return mid.deaths;
-      if (mid.time < time) {
-        series = series.slice(midIndex + 1);
-      }
-    }
-
-    return sumBy(series, 'deaths') / series.length;
+    return ss.my.summary.valueAt(time, ss.my.dates);
   },
   addRegionData(theStore, row) {
     const newRegions = new Map(theStore.my.regions);

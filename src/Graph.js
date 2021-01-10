@@ -79,7 +79,7 @@ const Graph = ({ size }) => {
   }, [graphStore, boxRef.current, readyToDraw]);
 
   return (
-    <Box border={{ width: '1px', color: 'black' }} background="white" ref={boxRef} fill />
+    <Box border={{ width: '1px', color: 'black' }} background="white" ref={boxRef} />
   );
 };
 

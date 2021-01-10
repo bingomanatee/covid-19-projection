@@ -389,6 +389,10 @@ export default {
     baseline: 500,
   },
   dataTable: {
+    font: {
+      family: 'Helvetica, sans serif',
+      size: '1rem',
+    },
     header: {},
     groupHeader: {
       border: {

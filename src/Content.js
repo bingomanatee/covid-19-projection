@@ -3,6 +3,7 @@ import { Heading, Main, Paragraph } from 'grommet';
 import store from './store';
 import Mortality from './Mortality';
 import About from './About';
+import RawData from './RawData';
 
 export default () => {
   const [page, setPage] = useState('');
@@ -26,6 +27,10 @@ export default () => {
   switch (page) {
     case 'home':
       PageComponent = Mortality;
+      break;
+
+    case 'data':
+      PageComponent = RawData;
       break;
 
     case 'about':
