@@ -16,7 +16,7 @@ export default () => (
       </P>
     </Box>
     <Box pad="small">
-      <Graph />
+
     </Box>
     <Box pad="small">
       <P>

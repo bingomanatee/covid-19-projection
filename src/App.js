@@ -19,44 +19,9 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    store.do.loadData();
     const sub = store.subscribe((map) => {
-      const rawDataLoadStatus = map.get('rawDataLoadStatus');
-      const regionLoadStatus = map.get('regionLoadStatus');
-      const datesParsedStatus = map.get('datesParsedStatus');
-      const summarizeStatus = map.get('summarizeStatus');
-      const lastRegionSummarized = map.get('lastRegionSummarized');
 
-      if (regionLoadStatus === 'loading') return;
-      console.info(
-        'rawDataLoadStatus:', rawDataLoadStatus,
-        'regionLoadStatus', regionLoadStatus,
-        'datesParsedStatus', datesParsedStatus,
-        'summarizeStatus', summarizeStatus,
-      );
-
-      if (rawDataLoadStatus === 'loaded') {
-        if (datesParsedStatus === 'not parsed') {
-          setTimeout(store.do.parseDates);
-        }
-        if (datesParsedStatus === 'parsed') {
-          if (regionLoadStatus === 'not loaded') {
-            setTimeout(store.do.createRegionData);
-          }
-          if (regionLoadStatus === 'loaded') {
-            if (summarizeStatus === 'not summarized') {
-              setTimeout(store.do.sumData);
-            }
-            if (summarizeStatus === 'done') {
-              if (!isLoading) setIsLoading(false);
-            }
-          }
-        }
-      }
-
-      if (rawDataLoadStatus === 'not loaded') {
-        store.do.loadData();
-        setIsLoading(true);
-      }
     });
 
     return () => sub.unsubscribe();
@@ -80,12 +45,14 @@ export default function App() {
               onClick={() => {
                 store.do.setPage('data');
               }}
-            />          <Button
-            label="About This Page"
-            onClick={() => {
-              store.do.setPage('about');
-            }}
-          />
+            />
+            {' '}
+            <Button
+              label="About This Page"
+              onClick={() => {
+                store.do.setPage('about');
+              }}
+            />
           </Box>
 
         </Header>
