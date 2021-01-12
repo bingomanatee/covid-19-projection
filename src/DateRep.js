@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 
 export const DATE_RE = /(.*)\/(.*)\/(.*)/;
 
+const reps = new Map();
+
 export default class DateRep {
   constructor(input) {
     if (typeof input === 'number') {
@@ -17,15 +19,27 @@ export default class DateRep {
         date: Number.parseInt(date, 10),
         year: Number.parseInt(year, 10) + 2000,
       };
-      this._d = new Date(data.year, data.month, data.date);
+      this._d = new Date(data.year, data.month - 1, data.date);
     }
 
     reps.set(this.time, this);
     reps.set(this.label, this);
   }
 
+  setTime(t) {
+    this._d = new Date(t);
+  }
+
   get key() {
     return dayjs(this._d).format('M/D/YY');
+  }
+
+  toString() {
+    return dayjs(this._d).format('DD-MM-YYYY');
+  }
+
+  toMonthString() {
+    return dayjs(this._d).format('MM-YYYY');
   }
 
   get label() {
@@ -36,8 +50,6 @@ export default class DateRep {
     return this._d.getTime();
   }
 }
-
-const reps = new Map();
 
 DateRep.from = (source) => {
   if (source instanceof Date) {

@@ -39,8 +39,6 @@ class MortalityDataTable extends Component {
   }
 
   render() {
-    console.log('columns: ', this.columns());
-    console.log('data:', this.state.rows);
     return <DataTable className="data-table" grouBy="state" columns={this.columns()} step={100000} data={this.state.rows} />;
   }
 }

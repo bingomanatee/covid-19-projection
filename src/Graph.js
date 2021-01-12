@@ -11,6 +11,7 @@ import clamp from 'lodash/clamp';
 import humNum from 'humanize-number';
 import store from './store';
 import makeGraphStore from './makeGraphStore';
+import DateRep from './DateRep';
 
 const formatDate = (date, long) => {
   if (!date) return '';
@@ -27,33 +28,30 @@ const Graph = ({ size }) => {
   const [graphStore, setGS] = useState(null);
   const [dates, setDates] = useState(new Map());
   const [readyToDraw, setRTD] = useState(false);
+  const [firstTime, setFT] = useState(0);
+  const [lastTime, setLT] = useState(0);
 
   const boxRef = useRef();
   const { width, height } = size;
 
   useEffect(() => {
     const sub = store.subscribe((map) => {
-      setValue(map);
-      const rawDataLoadStatus = map.get('rawDataLoadStatus');
-      const regionLoadStatus = map.get('regionLoadStatus');
-      const datesParsedStatus = map.get('datesParsedStatus');
-      const summarizeStatus = map.get('summarizeStatus');
-
-      if (rawDataLoadStatus === 'loaded') {
-        if (datesParsedStatus === 'parsed') {
-          if (regionLoadStatus === 'loaded') {
-            if (summarizeStatus === 'done') {
-              if (!readyToDraw) setRTD(true);
-            }
-          }
-        }
+      setValue(store.object);
+      const rtd = map.get('rawDataLoadStatus') === 'loaded';
+      if (readyToDraw !== rtd) {
+        setRTD(rtd);
       }
     });
     const newGraphStore = makeGraphStore(width, height, boxRef);
+    const gsSub = newGraphStore.subscribe((map) => {
+      if (map.get('firstTime') !== firstTime) setFT(map.get('firstTime'));
+      if (map.get('lastTime') !== lastTime) setLT(map.get('lastTime'));
+    });
     setGS(newGraphStore);
 
     return () => {
       sub.unsubscribe();
+      gsSub.unsubscribe();
     };
   }, []);
 
@@ -79,7 +77,17 @@ const Graph = ({ size }) => {
   }, [graphStore, boxRef.current, readyToDraw]);
 
   return (
-    <Box border={{ width: '1px', color: 'black' }} background="white" ref={boxRef} />
+    <Box flex="1" border={{ width: '1px', color: 'black' }} height="100%" background="white">
+      <div className="graph-wrapper">
+        <div className="graph-min-date">
+          {firstTime ? DateRep.from(firstTime).toString() : ''}
+        </div>
+        <div className="graph-max-date">
+          {lastTime ? DateRep.from(lastTime).toString() : ''}
+        </div>
+        <div className="graph-graphic" ref={boxRef} />
+      </div>
+    </Box>
   );
 };
 

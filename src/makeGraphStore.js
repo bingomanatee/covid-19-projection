@@ -6,7 +6,11 @@ import sortBy from 'lodash/sortBy';
 import clamp from 'lodash/clamp';
 import humNum from 'humanize-number';
 import dayjs from 'dayjs';
+import max from 'lodash/max';
+import min from 'lodash/min';
 import store from './store';
+
+import { deathsAtTime, getTimes, maxDeaths } from './db';
 
 const formatDate = (date, long) => {
   if (!date) return '';
@@ -33,6 +37,8 @@ export default function makeGraphStore(width, height) {
     dateLabel: null,
     deadLabel: null,
     drawing: false,
+    firstTime: 0,
+    lastTime: 0,
     height,
     width,
     timeSensors: [],
@@ -108,7 +114,7 @@ export default function makeGraphStore(width, height) {
     },
 
     xToDate(gs, x, compute) {
-      if (!store.my.dates.size) return 0;
+      return 0;
       if (compute) {
         const maxTime = store.do.maxExtDate().time;
         const minTime = store.do.minDate().time;
@@ -196,31 +202,34 @@ export default function makeGraphStore(width, height) {
       };
     },
 
-    drawLine(gs) {
-      const { maxDeaths } = gs.do.endCompute();
-      const scale = gs.my.height / maxDeaths;
-      const ordered = gs.do.orderedDates();
-      const { series } = store.my.summary;
+    async drawLine(gs) {
+      const times = await getTimes();
+      const firstTime = min(times);
+      const lastTime = max(times);
+      gs.do.setFirstTime(firstTime);
+      gs.do.setLastTime(lastTime);
+      const timeRange = lastTime - firstTime;
+      const xScale = gs.my.width / timeRange;
+      const mDeaths = await maxDeaths();
+      const yScale = gs.my.height / mDeaths;
+      const timeDeaths = await Promise.all(times.map(deathsAtTime));
 
-      let coordinates = [];
-      store.my.dates.forEach((date) => {
-        const { time, key } = date;
-        if (series.has(key)) {
-          const deaths = series.get(key);
-          coordinates.push({
-            time,
-            deaths,
-            date,
-            x: gs.do.timeToX(time, ordered),
-            y: (gs.my.height - (deaths * scale)),
-          });
-        }
+      const coordinates = [];
+      times.forEach((t, i) => {
+        const dTime = t - firstTime;
+        const d = timeDeaths[i];
+
+        const x = dTime * xScale;
+        const y = gs.my.height - (timeDeaths[i] * yScale);
+        coordinates.push({
+          y, x, d, t,
+        });
       });
 
-      coordinates = sortBy(coordinates, 'time');
+      console.log('coordinates:', coordinates);
 
-      const xys = coordinates.map((p) => ([p.x, p.y]));
-      xys.push([gs.my.width, (gs.my.height - (maxDeaths * scale))]);
+      const xys = sortBy(coordinates, 't').map((p) => ([p.x, p.y]));
+
       const polyLine = gs.my.svg.polyline(xys)
         .fill('none')
         .stroke({
@@ -228,10 +237,6 @@ export default function makeGraphStore(width, height) {
         });
 
       gs.do.setPolyLine(polyLine);
-
-      /*    setTimeout(() => {
-        gs.do.drawSensors(coordinates);
-      }); */
 
       gs.do.drawCursor();
 
@@ -281,6 +286,7 @@ export default function makeGraphStore(width, height) {
     },
 
     onMouseMove(gs, x, y) {
+      return;
       if (!gs.my.cursor) return;
       gs.my.cursor.x(x).y(y);
 
@@ -308,13 +314,10 @@ export default function makeGraphStore(width, height) {
       gs.do.setDrawing(true);
       gs.my.svg.clear();
       gs.my.svg.size(gs.my.width, gs.my.height);
+      if (gs.my.width < 200 || gs.my.height < 200) return;
 
-      if (store.my.summary.series.size) {
+      if (store.my.rawDataLoadStatus === 'loaded') {
         gs.do.drawLine();
-      }
-
-      if (store.my.dates.size) {
-        gs.do.drawDates();
       }
       gs.do.setDrawing(false);
     },

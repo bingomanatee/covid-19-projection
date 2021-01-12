@@ -6,7 +6,6 @@ export default ({ min, max }) => {
   const [values, setValues] = useState([min, max]);
 
   useEffect(() => {
-    console.log('values:', values);
   }, [values]);
 
   if (min < max) {

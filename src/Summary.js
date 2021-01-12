@@ -17,7 +17,7 @@ export default () => (
       </P>
     </Box>
     <Box pad="small">
-      <Graph />{' '}
+      <DexieReport />
     </Box>
     <Box pad="small">
       <P>
