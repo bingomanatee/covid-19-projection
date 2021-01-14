@@ -35,6 +35,18 @@ const Graph = ({ size }) => {
   const { width, height } = size;
 
   useEffect(() => {
+    if (!graphStore) return;
+    if (
+      (width !== graphStore.my.width)
+     || (height !== graphStore.my.height)
+    ) {
+      graphStore.do.setWidth(width);
+      graphStore.do.setHeight(height);
+      graphStore.do.drawGraph();
+    }
+  }, [width, height, graphStore]);
+
+  useEffect(() => {
     const sub = store.subscribe((map) => {
       setValue(store.object);
       const rtd = map.get('rawDataLoadStatus') === 'loaded';
@@ -67,10 +79,19 @@ const Graph = ({ size }) => {
   useEffect(() => {
     if (!graphStore) return;
     if (readyToDraw && boxRef.current) {
-      if (boxRef.current !== graphStore.my.svgDiv) graphStore.do.setSvgDiv(boxRef.current);
-      if (!graphStore.my.svg) graphStore.do.setSvg(SVG(boxRef.current));
-      console.log('drawGraph!!!!');
-      graphStore.do.drawGraph();
+      if (boxRef.current !== graphStore.my.svgDiv) {
+        graphStore.do.setSvgDiv(boxRef.current);
+        const svg = SVG(boxRef.current);
+        if (!graphStore.my.svg) {
+          graphStore.do.setSvg(svg);
+          svg.on('mousemove', (event) => {
+            const { offsetX, offsetY } = event;
+            graphStore.do.onMouseMove(offsetX, offsetY);
+          });
+        }
+        console.log('drawGraph!!!!');
+        graphStore.do.drawGraph();
+      }
     } else {
       console.log('readyToDraw: ', readyToDraw);
     }

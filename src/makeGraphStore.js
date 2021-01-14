@@ -8,9 +8,27 @@ import humNum from 'humanize-number';
 import dayjs from 'dayjs';
 import max from 'lodash/max';
 import min from 'lodash/min';
+import first from 'lodash/first';
+import last from 'lodash/last';
+import lerp from 'lerp';
+import chunk from 'lodash/chunk';
 import store from './store';
 
 import { deathsAtTime, getTimes, maxDeaths } from './db';
+import DateRep from './DateRep';
+
+const DEATH_INC = 100000;
+
+const nextYear = new Date();
+nextYear.setMonth(nextYear.getMonth() + 12);
+const A_YEAR_IN_MS = nextYear.getTime() - Date.now();
+
+const aMonthAgo = new Date();
+for (let i = 0; i <= 31; ++i) {
+  aMonthAgo.setDate(aMonthAgo.getDate() - 1);
+}
+
+const A_MONTH_MS = Date.now() - aMonthAgo.getTime();
 
 const formatDate = (date, long) => {
   if (!date) return '';
@@ -26,6 +44,14 @@ const DEATH_COLOR = '#f06';
 
 const A_MONTH_AGO_MS = 1000 * 60 * 60 * 24 * 30;
 
+function divide(list) {
+  return chunk(list, Math.max(1, Math.round((list.length) / 2)));
+}
+
+function within1(a, b) {
+  return Math.abs(a - b) <= 1;
+}
+
 export default function makeGraphStore(width, height) {
   return addActions(new ValueMapStream({
     data: [],
@@ -39,9 +65,14 @@ export default function makeGraphStore(width, height) {
     drawing: false,
     firstTime: 0,
     lastTime: 0,
+    lastData: {},
+    aYearFromNow: {},
     height,
     width,
-    timeSensors: [],
+    xScale: 1,
+    yScale: 1,
+    maxDeaths: 100,
+    coordinates: [],
   }), {
     orderedDates(gs, useExt) {
       return store.do.orderedDates(useExt);
@@ -191,44 +222,53 @@ export default function makeGraphStore(width, height) {
       const values = Array.from(store.my.summary.series.values());
       return sortBy(values).pop();
     },
-    endCompute(gs) {
-      const lastDate = store.do.maxDate();
-      const lastExtDate = store.do.maxExtDate();
-      const millisecondsExt = lastExtDate.time - lastDate.time;
-      const lastDeaths = store.do.deathsAtTime(lastDate.time);
-      const maxDeaths = lastDeaths + gs.do.deathSlope() * millisecondsExt;
-      return {
-        lastDate, lastExtDate, millisecondsExt, lastDeaths, maxDeaths,
-      };
+
+    async projectTime(gs) {
+      const times = await getTimes();
+      const timeDeaths = await Promise.all(times.map(deathsAtTime));
+      const coordinates = times.map((time, index) => ({ t: time, d: timeDeaths[index] }));
+
+      const latest = coordinates[coordinates.length - 1];
+      const monthAgo = coordinates.reduce((then, c, index) => {
+        if (c.t + A_MONTH_AGO_MS > latest.t) return then;
+        return c;
+      }, [0, 0]);
+
+      const deathsPerMS = (latest.d - monthAgo.d) / (latest.t - monthAgo.t);
+
+      const aYearFromNow = { ...latest };
+      aYearFromNow.t += A_YEAR_IN_MS;
+      aYearFromNow.d += Math.round(A_YEAR_IN_MS * deathsPerMS);
+
+      coordinates.push(aYearFromNow);
+      gs.do.setCoordinates(coordinates);
+      gs.do.setlastData(latest);
+      gs.do.setAYearFromNow(aYearFromNow);
+
+      const lastC = gs.my.coordinates[gs.my.coordinates.length - 1];
+      const firstC = gs.my.coordinates[0];
+      gs.do.setFirstTime(firstC.t);
+      gs.do.setLastTime(lastC.t);
+
+      const timeRange = gs.my.lastTime - gs.my.firstTime;
+      const xScale = gs.my.width / timeRange;
+      const yScale = gs.my.height / lastC.d;
+      gs.do.setMaxDeaths(lastC.d);
+
+      gs.do.setXScale(xScale);
+      gs.do.setYScale(yScale);
+
+      return coordinates;
     },
 
     async drawLine(gs) {
-      const times = await getTimes();
-      const firstTime = min(times);
-      const lastTime = max(times);
-      gs.do.setFirstTime(firstTime);
-      gs.do.setLastTime(lastTime);
-      const timeRange = lastTime - firstTime;
-      const xScale = gs.my.width / timeRange;
-      const mDeaths = await maxDeaths();
-      const yScale = gs.my.height / mDeaths;
-      const timeDeaths = await Promise.all(times.map(deathsAtTime));
-
-      const coordinates = [];
-      times.forEach((t, i) => {
-        const dTime = t - firstTime;
-        const d = timeDeaths[i];
-
-        const x = dTime * xScale;
-        const y = gs.my.height - (timeDeaths[i] * yScale);
-        coordinates.push({
-          y, x, d, t,
-        });
+      gs.my.coordinates.forEach((c) => {
+        const dTime = c.t - gs.my.firstTime;
+        c.x = dTime * gs.my.xScale;
+        c.y = gs.my.height - (c.d * gs.my.yScale);
       });
 
-      console.log('coordinates:', coordinates);
-
-      const xys = sortBy(coordinates, 't').map((p) => ([p.x, p.y]));
+      const xys = sortBy(gs.my.coordinates, 't').map((p) => ([p.x, p.y]));
 
       const polyLine = gs.my.svg.polyline(xys)
         .fill('none')
@@ -240,17 +280,11 @@ export default function makeGraphStore(width, height) {
 
       gs.do.drawCursor();
 
-      const onMove = throttle(gs.do.onMouseMove, 50);
-
-      gs.my.svg.on('mousemove', (event) => {
-        const { offsetX, offsetY } = event;
-        onMove(offsetX, offsetY);
-      });
-
       if (!store.my.drawn) store.do.setDrawn(true);
     },
 
     drawCursor(gs) {
+      if (gs.my.cursor) gs.my.cursor.remove();
       const cursor = gs.my.svg.group();
       cursor.line(-2 * gs.my.width, 0, 2 * gs.my.width, 0)
         .stroke({
@@ -262,7 +296,7 @@ export default function makeGraphStore(width, height) {
           color: DEATH_COLOR,
           width: 1,
         });
-      // (a) => a.tspan(`${formatDate(coord.date, true)}`))
+
       const date = cursor.text('')
         .x(4).y(-4)
         .font({
@@ -272,7 +306,7 @@ export default function makeGraphStore(width, height) {
         });
 
       const dead = cursor.text('')
-        .x(-50).y(-4)
+        .x(-80).y(-4)
         .font({
           family: 'Helvetica',
           size: 14,
@@ -285,39 +319,153 @@ export default function makeGraphStore(width, height) {
       gs.do.setDeadLabel(dead);
     },
 
-    onMouseMove(gs, x, y) {
-      return;
-      if (!gs.my.cursor) return;
-      gs.my.cursor.x(x).y(y);
-
-      let dead = 0;
-
-      let date = gs.do.xToDate(x);
-      if (x >= gs.do.maxX()) {
-        date = gs.do.xToDate(x, true);
-        dead = gs.do.extDeathAtTime(date.getTime());
-      } else {
-        dead = store.do.deathsAtTime(date.time);
+    reflectDataPoint(gs, x, alpha, beta) {
+      if (!alpha) {
+        return null;
+      }
+      let coordinate = alpha;
+      if (beta) {
+        const xDiff = (beta.x - alpha.x);
+        const alphaRatio = (x - alpha.x) / xDiff;
+        coordinate = {
+          t: Math.round(lerp(alpha.t, beta.t, alphaRatio)),
+          d: Math.round(lerp(alpha.d, beta.d, alphaRatio)),
+          y: Math.round(lerp(alpha.y, beta.y, alphaRatio)),
+        };
+        console.log(x, 'between', alpha, 'and', beta, 'ratio:', alphaRatio);
       }
 
-      if (Number.isNaN(dead)) return;
-      if (gs.my.dateLabel) {
-        gs.my.dateLabel.tspan(formatDate(date, true));
-      }
-      gs.my.deadLabel.tspan(humNum(dead)).font({ anchor: 'right' });
+      const dr = DateRep.from(coordinate.t);
+
+      gs.my.dateLabel.tspan(dr.cursorLabel())
+        .font({
+          fill: 'black',
+          align: 'right',
+          size: 12,
+        });
+
+      gs.my.deadLabel.tspan(`${humNum(coordinate.d)} dead`)
+        .font({
+          fill: DEATH_COLOR,
+          align: 'right',
+          size: 12,
+        });
+
+      return coordinate;
     },
 
-    drawGraph(gs) {
-      if (gs.my.drawing) {
+    extrapolateFromX(gs, x) {
+      if (!gs.my.coordinates.length) return null;
+      const closeToX = (c) => within1(c.x, x);
+
+      const thumb = { x };
+      const candidates = sortBy([thumb, ...gs.my.coordinates], 'x');
+      const index = candidates.indexOf(thumb);
+      const before = candidates[index - 1];
+      const after = candidates[index + 1];
+      if (before && (closeToX(before) || !after)) {
+        gs.do.reflectDataPoint(x, before);
+      }
+      if (after && (closeToX(after) || !before)) {
+        return gs.do.reflectDataPoint(x, after);
+      }
+
+      return gs.do.reflectDataPoint(x, before, after);
+    },
+
+    onMouseMove(gs, x, y) {
+      if (!gs.my.cursor) return;
+      const coord = gs.do.extrapolateFromX(x);
+      if (!coord) return;
+      gs.my.cursor.x(x).y(coord.y);
+    },
+
+    drawGrid(gs) {
+      const grid = gs.my.svg.group();
+
+      function dy(d) {
+        return gs.my.height - d * gs.my.yScale;
+      }
+
+      const dt = Date.now() - gs.my.firstTime;
+      const nowX = dt * gs.my.xScale;
+
+      grid.rect(gs.my.width - nowX + 10, gs.my.height + 20)
+        .x(nowX).y(-10).attr('fill', 'orange')
+        .opacity(0.2);
+
+      grid.text('(Projection)')
+        .x(nowX + 10).y(gs.my.height / 2)
+        .font({
+          size: 20,
+          fill: 'darkorange',
+          family: 'Martel, sans-serif',
+        });
+
+      for (let deaths = DEATH_INC; deaths < gs.my.maxDeaths; deaths += DEATH_INC) {
+        const y = dy(deaths);
+        grid.line(-10, y, gs.my.width + 10, y)
+          .stroke({
+            width: 1,
+            color: DEATH_COLOR,
+            opacity: 0.25,
+          });
+        grid.text((a) => a.tspan(humNum(deaths)))
+          .x(10).cy(y)
+          .font({
+            family: 'Helvetica',
+            fill: DEATH_COLOR,
+            size: 12,
+            weight: 'bold'
+          });
+      }
+
+      const date = new Date(gs.my.firstTime);
+      date.setDate(1);
+
+      while (date.getTime() < gs.my.lastTime) {
+        const t = date.getTime();
+
+        const dt = t - gs.my.firstTime;
+        const x = dt * gs.my.xScale;
+
+        grid.line(x, 12, x, gs.my.height + 10)
+          .stroke({
+            width: 1,
+            color: 'black',
+            opacity: 0.25,
+          });
+
+        const ref = new DateRep(t);
+        grid.text((a) => a.tspan(ref.toMonthString()).font({
+          family: 'Martel, sans-serif',
+          weight: 'bold',
+          align: 'center',
+          size: 12,
+        }))
+          .font({
+            anchor: 'center',
+          })
+          .cx(x)
+          .y(5);
+
+        date.setMonth(date.getMonth() + 2);
+      }
+    },
+
+    async drawGraph(gs) {
+      if (gs.my.drawing || (!gs.my.svg)) {
         return;
       }
       gs.do.setDrawing(true);
       gs.my.svg.clear();
       gs.my.svg.size(gs.my.width, gs.my.height);
       if (gs.my.width < 200 || gs.my.height < 200) return;
-
       if (store.my.rawDataLoadStatus === 'loaded') {
+        await gs.do.projectTime();
+        gs.do.drawGrid();
         gs.do.drawLine();
+        gs.do.drawCursor();
       }
       gs.do.setDrawing(false);
     },

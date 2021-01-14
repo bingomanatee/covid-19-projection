@@ -39,11 +39,19 @@ export default class DateRep {
   }
 
   toMonthString() {
-    return dayjs(this._d).format('MM-YYYY');
+    return dayjs(this._d).format('MMM/YY');
+  }
+
+  cursorLabel() {
+    return dayjs(this._d).format('MMM D, YYYY');
   }
 
   get label() {
     return this.key;
+  }
+
+  getMonth() {
+    return this._d.getMonth();
   }
 
   get time() {
@@ -51,6 +59,11 @@ export default class DateRep {
   }
 }
 
+/**
+ *
+ * @param source
+ * @returns {DateRep}
+ */
 DateRep.from = (source) => {
   if (source instanceof Date) {
     if (reps.has(source.getTime())) return reps.get(source.getTime());

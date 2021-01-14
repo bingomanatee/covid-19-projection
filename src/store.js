@@ -6,6 +6,8 @@ import { clamp, sumBy } from 'lodash';
 import dayjs from 'dayjs';
 import lGet from 'lodash/get';
 import max from 'lodash/max';
+import first from 'lodash/first';
+import last from 'lodash/last';
 import getRawData from './get-raw-data';
 import Region from './Region';
 import {
@@ -29,15 +31,26 @@ const store = addActions(new ValueMapStream({
 {
   dataTable(ss) {
     const dates = ss.do.firstOfMonths();
-    const rows = [];
-    ss.my.regions.forEach((region) => {
-      rows.push(region.toData(dates));
-    });
 
-    rows.push(ss.my.summary.toData(dates));
     return {
-      dates, rows,
+      dates,
+      rows: ss.my.states,
     };
+  },
+
+  firstOfMonths(ss) {
+    if (!ss.my.states.length) {
+      return [];
+    }
+    const firstState = first(ss.my.states);
+    return [...firstState.deathMap.keys()]
+      .reduce((firsts, t) => {
+        if (!firsts.length) return [DateRep.from(t)];
+        if (last(firsts).getMonth() !== new Date(t).getMonth()) {
+          return [...firsts, DateRep.from(t)];
+        }
+        return firsts;
+      }, []);
   },
   async deathsAtTime(ss, time) {
     return deathsAtTime(time);

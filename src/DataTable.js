@@ -39,7 +39,7 @@ class MortalityDataTable extends Component {
   }
 
   render() {
-    return <DataTable className="data-table" grouBy="state" columns={this.columns()} step={100000} data={this.state.rows} />;
+    return <DataTable className="data-table" columns={this.columns()} step={100000} data={this.state.rows} />;
   }
 }
 
