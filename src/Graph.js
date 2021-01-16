@@ -1,6 +1,10 @@
 /* eslint-disable no-param-reassign */
-import React, { useState, useRef, useEffect } from 'react';
-import { Box, Header, Paragraph as P } from 'grommet';
+import React, {
+  useState, useRef, useEffect, useContext,
+} from 'react';
+import {
+  Box, Header, Paragraph as P, ResponsiveContext,
+} from 'grommet';
 import sizeMe from 'react-sizeme';
 import dayjs from 'dayjs';
 import SVG from 'svg.js';
@@ -27,9 +31,10 @@ const Graph = ({ size }) => {
   const [value, setValue] = useState(new Map());
   const [graphStore, setGS] = useState(null);
   const [dates, setDates] = useState(new Map());
-  const [readyToDraw, setRTD] = useState(false);
   const [firstTime, setFT] = useState(0);
   const [lastTime, setLT] = useState(0);
+
+  const pageSize = useContext(ResponsiveContext);
 
   const boxRef = useRef();
   const { width, height } = size;
@@ -38,64 +43,49 @@ const Graph = ({ size }) => {
     if (!graphStore) return;
     if (
       (width !== graphStore.my.width)
+      || (graphStore.my.size !== size)
      || (height !== graphStore.my.height)
     ) {
       graphStore.do.setWidth(width);
       graphStore.do.setHeight(height);
-      graphStore.do.drawGraph();
     }
-  }, [width, height, graphStore]);
+    if (boxRef.current !== graphStore.my.svgDiv) {
+      graphStore.do.setSvgDiv(boxRef.current);
+      const svg = SVG(boxRef.current);
+      if (!graphStore.my.svg) {
+        graphStore.do.setSvg(svg);
+        svg.on('mousemove', (event) => {
+          const { offsetX, offsetY } = event;
+          graphStore.do.onMouseMove(offsetX, offsetY);
+        });
+      }
+    }
+  }, [width, height, graphStore, boxRef.current]);
 
   useEffect(() => {
-    const sub = store.subscribe((map) => {
-      setValue(store.object);
-      const rtd = map.get('rawDataLoadStatus') === 'loaded';
-      if (readyToDraw !== rtd) {
-        setRTD(rtd);
-      }
-    });
-    const newGraphStore = makeGraphStore(width, height, boxRef);
+    const newGraphStore = makeGraphStore(width, height, pageSize, boxRef);
     const gsSub = newGraphStore.subscribe((map) => {
       if (map.get('firstTime') !== firstTime) setFT(map.get('firstTime'));
       if (map.get('lastTime') !== lastTime) setLT(map.get('lastTime'));
+      newGraphStore.do.drawGraph();
     });
     setGS(newGraphStore);
 
     return () => {
-      sub.unsubscribe();
       gsSub.unsubscribe();
     };
   }, []);
 
   useEffect(() => {
+    console.log('graph page size: ', pageSize);
     if (!(graphStore && graphStore.my.svg && height && width)) {
       return;
     }
     if (width !== graphStore.my.width) graphStore.do.setWidth(width);
     if (height !== graphStore.my.height) graphStore.do.setHeight(height);
+    if (graphStore && (pageSize !== graphStore.my.pageSize)) graphStore.do.setPageSize(pageSize);
     graphStore.do.drawGraph();
-  }, [graphStore, width, height]);
-
-  useEffect(() => {
-    if (!graphStore) return;
-    if (readyToDraw && boxRef.current) {
-      if (boxRef.current !== graphStore.my.svgDiv) {
-        graphStore.do.setSvgDiv(boxRef.current);
-        const svg = SVG(boxRef.current);
-        if (!graphStore.my.svg) {
-          graphStore.do.setSvg(svg);
-          svg.on('mousemove', (event) => {
-            const { offsetX, offsetY } = event;
-            graphStore.do.onMouseMove(offsetX, offsetY);
-          });
-        }
-        console.log('drawGraph!!!!');
-        graphStore.do.drawGraph();
-      }
-    } else {
-      console.log('readyToDraw: ', readyToDraw);
-    }
-  }, [graphStore, boxRef.current, readyToDraw]);
+  }, [graphStore, width, height, pageSize]);
 
   return (
     <Box flex="1" border={{ width: '1px', color: 'brand' }} height="100%" background="white">
