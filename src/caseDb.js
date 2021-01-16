@@ -3,10 +3,10 @@ import Dexie from 'dexie';
 import DateRep, { DATE_RE } from './DateRep';
 import sumBy from 'lodash/sumBy'
 import groupBy from 'lodash/groupBy'
-import getRawData from './getDeathData';
+import getRawData from './getCaseData';
 import Region from "./Region";
 
-export const db = new Dexie('COVID-19-deaths');
+export const db = new Dexie('COVID-19-cases');
 
 db.version(1)
   .stores({
@@ -15,7 +15,7 @@ db.version(1)
     deaths: '++id, state, t',
     summaries: 't'
   });
-let lastState = '';
+
 export const addRegion = async (row, comm) => {
   const {
     UID, iso2, iso3, code3, FIPS, Admin2, Province_State, Country_Region, Lat, Long_, Combined_Key,
@@ -68,10 +68,10 @@ export const firstTime = async () => {
 export const maxDeaths = async () => {
   const t = await lastTime();
   console.log('max deaths -- at time ', t);
-  return deathsAtTime(t);
+  return casesAtTime(t);
 }
 
-export const deathsAtTime = async (time) => {
+export const casesAtTime = async (time) => {
   const dr = DateRep.from(time);
   const sum = await db.summaries.get(time);
   if (sum) {

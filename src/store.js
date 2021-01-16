@@ -1,32 +1,24 @@
 /* eslint-disable camelcase */
-import sortBy from 'lodash/sortBy';
 import groupBy from 'lodash/groupBy';
 import { addActions, ValueMapStream } from '@wonderlandlabs/looking-glass-engine';
-import { clamp, sumBy } from 'lodash';
-import dayjs from 'dayjs';
-import lGet from 'lodash/get';
-import max from 'lodash/max';
 import first from 'lodash/first';
 import last from 'lodash/last';
-import getRawData from './get-raw-data';
-import Region from './Region';
-import {
-  load, deathsAtTime, addRow, addRegion, db,
-} from './db';
+import getDeathData from './getDeathData';
 import StateData from './StateData';
+import CaseStateData from './CaseStateData';
 import DateRep from './DateRep';
-
-const { path } = window.location;
-
-const DATE_RE = /(.*)\/(.*)\/(.*)/;
-const MAX_SESSION = 500;
+import { deathsAtTime } from './db';
+import { casesAtTime } from './caseDb';
+import getCaseData from "./getCaseData";
 
 const currentPage = 'home';
 const store = addActions(new ValueMapStream({
   page: currentPage,
   rawDataLoadStatus: 'not loaded',
+  rawCaseDataLoadStatus: 'not loaded',
   loadError: null,
   states: [],
+  caseStates: [],
 }),
 {
   dataTable(ss) {
@@ -52,22 +44,18 @@ const store = addActions(new ValueMapStream({
         return firsts;
       }, []);
   },
-  async deathsAtTime(ss, time) {
-    return deathsAtTime(time);
-  },
-  async loadData(theStore) {
-    if (!(theStore.my.rawDataLoadStatus === 'not loaded')) {
+  async loadData(ss) {
+    if (!(ss.my.rawDataLoadStatus === 'not loaded')) {
       return;
     }
-    theStore.do.setRawDataLoadStatus('loading');
-    const rows = await getRawData();
+    ss.do.setRawDataLoadStatus('loading');
+    const rows = await getDeathData();
     const byState = groupBy(rows, (row) => `${row.Province_State},${row.Country_Region}`);
-    theStore.do.setStates([...Object.values(byState)].map((stateRows) => new StateData(stateRows)));
-    theStore.do.loadNextState();
+    ss.do.setStates([...Object.values(byState)].map((stateRows) => new StateData(stateRows)));
+    ss.do.loadNextState();
   },
   loadNextState(ss) {
     const nextUnloadedState = ss.my.states.find((state) => state.loadStatus === 'unloaded');
-
     if (nextUnloadedState) {
       nextUnloadedState.write()
         .then((results) => {
@@ -78,31 +66,28 @@ const store = addActions(new ValueMapStream({
     }
   },
 
-  updateRecordedDataValue(ss, index, value) {
-    if (ss.my.rawData[index]) {
-      if (ss.my.rawData[index].recorded !== value) {
-        ss.do.setRawData(ss.my.rawData.map((pair, pi) => {
-          if (pi === index) {
-            return { ...pair, recorded: value };
-          }
-          return pair;
-        }));
-      }
+  async loadCaseData(ss) {
+    if (!(ss.my.rawCaseDataLoadStatus === 'not loaded')) {
+      return;
     }
-    if (value !== 'recording') {
-      const unprocessedIndex = ss.my.rawData.findIndex(
-        (pair) => (
-          !((pair.recorded === true
-              || (typeof (pair.recorded) === 'object')))
-        ),
-      );
-      if (unprocessedIndex === -1) {
-        ss.do.setRawDataLoadStatus('loaded');
-      }
+    ss.do.setRawCaseDataLoadStatus('loading');
+    const rows = await getCaseData();
+    const byState = groupBy(rows, (row) => `${row.Province_State},${row.Country_Region}`);
+    ss.do.setCaseStates([...Object.values(byState)].map((stateRows) => new CaseStateData(stateRows)));
+    ss.do.loadNextCaseState();
+  },
+  loadNextCaseState(ss) {
+    const nextUnloadedState = ss.my.caseStates.find((state) => state.loadStatus === 'unloaded');
+    if (nextUnloadedState) {
+      nextUnloadedState.write()
+        .then((results) => {
+          ss.do.loadNextCaseState();
+        });
+    } else {
+      ss.do.setRawCaseDataLoadStatus('loaded');
     }
   },
-
-  async summary() {
+/*  async summary() {
     const byTime = new Map();
     try {
       await db.deaths.each((record) => {
@@ -136,7 +121,7 @@ const store = addActions(new ValueMapStream({
       console.log('summary error: ', err);
       return [];
     }
-  },
+  }, */
 });
 
 export default store;

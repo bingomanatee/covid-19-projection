@@ -11,9 +11,7 @@ export default () => (
     <Box pad="small">
       <H textAlign="center" weight={800} level={1}>Mortality Rates</H>
       <P pad="medium" align="center">
-        This page is an up-to-date graph on COVID-19 Mortality rates in the United States of America.
-        Deaths past current date are based on a linear extrapolation of deaths over time
-        based on the progress of deaths since a month ago.
+        This is a summary of the statistical data used to build the mortality graph.
       </P>
     </Box>
     <Box pad="small">

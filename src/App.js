@@ -10,7 +10,6 @@ import {
   Paragraph, Grid, Layer,
 } from 'grommet';
 import Loader from 'react-loader-spinner';
-import getRawData from './get-raw-data';
 import theme from './theme';
 import store from './store';
 import Content from './Content';
@@ -19,9 +18,27 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    store.do.loadData();
     const sub = store.subscribe((map) => {
+      let loadStatus = null;
 
+      switch (map.get('page')) {
+        case 'home':
+          loadStatus = map.get('rawDataLoadStatus');
+          if (loadStatus === 'not loaded') store.do.loadData();
+          break;
+
+        case 'cases':
+          loadStatus = map.get('rawCaseDataLoadStatus');
+          if (loadStatus === 'not loaded') store.do.loadCaseData();
+          break;
+      }
+
+      console.log('load Status:', loadStatus);
+      if (loadStatus) {
+        const newIsLoading = loadStatus !== 'loaded';
+        console.log('newIsLoading', newIsLoading);
+        setIsLoading(newIsLoading);
+      }
     });
 
     return () => sub.unsubscribe();
@@ -37,16 +54,20 @@ export default function App() {
             fill="horizontal"
           >
             <Button
-              label="COVID-19 Projection"
-              onClick={() => store.do.setPage('home')}
+              label="COVID-19 Mortality"
+              onClick={() => store.do.setPage('mortality')}
             />
             <Button
-              label="Source Data (table)"
+              label="COVID-19 Cases"
+              onClick={() => store.do.setPage('cases')}
+            />
+            <Box flex="1" />
+            <Button
+              label="Summary Table"
               onClick={() => {
                 store.do.setPage('data');
               }}
             />
-            {' '}
             <Button
               label="About This Page"
               onClick={() => {

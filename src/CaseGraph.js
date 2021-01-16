@@ -1,16 +1,11 @@
 /* eslint-disable no-param-reassign */
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Header, Paragraph as P } from 'grommet';
+import { Box } from 'grommet';
 import sizeMe from 'react-sizeme';
 import dayjs from 'dayjs';
 import SVG from 'svg.js';
-import debounce from 'lodash/debounce';
-import { ValueMapStream, addActions } from '@wonderlandlabs/looking-glass-engine';
-import sortBy from 'lodash/sortBy';
-import clamp from 'lodash/clamp';
-import humNum from 'humanize-number';
 import store from './store';
-import makeGraphStore from './makeGraphStore';
+import makeGraphStore from './makeCaseGraphStore';
 import DateRep from './DateRep';
 
 const formatDate = (date, long) => {
@@ -21,12 +16,12 @@ const formatDate = (date, long) => {
   return dayjs(date).format('MMM D YY');
 };
 
-const DEATH_COLOR = '#f06';
+const CASE_COLOR = '#27c507';
 
-const Graph = ({ size }) => {
+const CaseGraph = ({ size }) => {
   const [value, setValue] = useState(new Map());
   const [graphStore, setGS] = useState(null);
-  const [dates, setDates] = useState(new Map());
+
   const [readyToDraw, setRTD] = useState(false);
   const [firstTime, setFT] = useState(0);
   const [lastTime, setLT] = useState(0);
@@ -49,11 +44,12 @@ const Graph = ({ size }) => {
   useEffect(() => {
     const sub = store.subscribe((map) => {
       setValue(store.object);
-      const rtd = map.get('rawDataLoadStatus') === 'loaded';
-      if (readyToDraw !== rtd) {
-        setRTD(rtd);
-      }
+      const loadStatus = map.get('rawCaseDataLoadStatus');
+      console.log('case rawDataCaseLoadStatus', loadStatus);
+      const rtd = loadStatus === 'loaded';
+      setRTD(rtd);
     });
+    console.log('Case graph: ready to draw: ', readyToDraw);
     const newGraphStore = makeGraphStore(width, height, boxRef);
     const gsSub = newGraphStore.subscribe((map) => {
       if (map.get('firstTime') !== firstTime) setFT(map.get('firstTime'));
@@ -112,4 +108,4 @@ const Graph = ({ size }) => {
   );
 };
 
-export default sizeMe({ monitorHeight: true })(Graph);
+export default sizeMe({ monitorHeight: true })(CaseGraph);

@@ -1,35 +1,30 @@
 import React from 'react';
 
 import {
-  Paragraph as P, Heading as H, markdown, Grid, Box,
+  Paragraph as P, Heading as H, markdown, Grid, Box, Footer,
 } from 'grommet';
 import Graph from './Graph';
-import DexieReport from './DexieReport';
+import GraphFooter from './GraphFooter';
 
 export default () => (
   <Grid rows={['auto', '1fr', 'auto']} fill="true" height="100%">
     <Box pad="small">
-      <H textAlign="center" weight={800} level={1}>Mortality Rates</H>
+      <H textAlign="center" weight={800} level={1}>Total COVID-19 Deaths</H>
       <P pad="medium" align="center">
-        This page is an up-to-date graph on COVID-19 Mortality rates in the United States of America.
-        Deaths past current date are based on a linear extrapolation of deaths over time
-        based on the progress of deaths since a month ago.
-      </P>
-    </Box>
-    <Box pad="small">
-      <Graph />{' '}
-    </Box>
-    <Box pad="small">
-      <P>
-        The source code used to build this projection is at
+        An up-to-date graph on total COVID-19 deaths
+        in the United States of America.
+        Projected deaths are based on a
         {' '}
-        <a
-          target="github"
-          href="https://github.com/bingomanatee/covid-19-projection"
-        >
-          https://github.com/bingomanatee/covid-19-projection
-        </a>
+        <b>linear extrapolation</b>
+        {' -- '}
+        a straight line from the death total
+        a month ago to the current total.
       </P>
     </Box>
+    <Box pad="small">
+      <Graph />
+      {' '}
+    </Box>
+    <GraphFooter />
   </Grid>
 );

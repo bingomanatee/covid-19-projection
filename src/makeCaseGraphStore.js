@@ -1,19 +1,19 @@
 /* eslint-disable no-param-reassign */
-
+import debounce from 'lodash/debounce';
+import throttle from 'lodash/throttle';
 import { ValueMapStream, addActions } from '@wonderlandlabs/looking-glass-engine';
 import sortBy from 'lodash/sortBy';
 import clamp from 'lodash/clamp';
 import humNum from 'humanize-number';
 import dayjs from 'dayjs';
-
 import lerp from 'lerp';
 import chunk from 'lodash/chunk';
 import store from './store';
 
-import { deathsAtTime, getTimes } from './db';
+import { casesAtTime, getTimes } from './caseDb';
 import DateRep from './DateRep';
 
-const DEATH_INC = 100000;
+const DEATH_INC = 10000000;
 
 const nextYear = new Date();
 nextYear.setMonth(nextYear.getMonth() + 12);
@@ -36,7 +36,7 @@ const formatDate = (date, long) => {
   if (date.date) return formatDate(date.date, long);
   return '---';
 };
-const DEATH_COLOR = '#f06';
+const DEATH_COLOR = '#38c600';
 
 const A_MONTH_AGO_MS = 1000 * 60 * 60 * 24 * 30;
 
@@ -48,7 +48,7 @@ function within1(a, b) {
   return Math.abs(a - b) <= 1;
 }
 
-export default function makeGraphStore(width, height) {
+export default function makeCaseGraphStore(width, height) {
   return addActions(new ValueMapStream({
     data: [],
     lineDrawn: false,
@@ -120,7 +120,7 @@ export default function makeGraphStore(width, height) {
     },
     async projectTime(gs) {
       const times = await getTimes();
-      const timeDeaths = await Promise.all(times.map(deathsAtTime));
+      const timeDeaths = await Promise.all(times.map(casesAtTime));
       const coordinates = times.map((time, index) => ({ t: time, d: timeDeaths[index] }));
 
       const latest = coordinates[coordinates.length - 1];

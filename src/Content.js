@@ -3,7 +3,8 @@ import { Heading, Main, Paragraph } from 'grommet';
 import store from './store';
 import Mortality from './Mortality';
 import About from './About';
-import RawData from './RawData';
+import Cases from './Cases';
+import Summary from './Summary';
 
 export default () => {
   const [page, setPage] = useState('');
@@ -22,7 +23,7 @@ export default () => {
     };
   }, []);
 
-  let PageComponent = null;
+  let PageComponent = Mortality;
 
   switch (page) {
     case 'home':
@@ -30,15 +31,20 @@ export default () => {
       break;
 
     case 'data':
-      PageComponent = RawData;
+      PageComponent = Summary;
+      break;
+
+    case 'cases':
+      PageComponent = Cases;
       break;
 
     case 'about':
       PageComponent = About;
       break;
-  }
 
-  console.log('rendering ---- page = ', page);
+    default:
+      PageComponent = Mortality;
+  }
 
   if (!PageComponent) return '';
 

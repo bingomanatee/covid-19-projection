@@ -38,7 +38,7 @@ export default class DexieReport extends Component {
     const { rawDataLoadStatus, summary, states } = this.state;
     return (
       <Box pad="medium" overflow="auto">
-        <H level={1}>Dexie Report</H>
+        <H level={1}>Total Deaths</H>
         <P>
           Load Status:
           <i>{rawDataLoadStatus}</i>
