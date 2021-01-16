@@ -240,10 +240,10 @@ export default {
       radius: '0.5rem',
     },
     primary: {
-      font: { family: "Roboto, 'Helvetica Neue', Helvetica, sans-serif", weight: 800 },
+      font: { family: "'Roboto', 'Helvetica Neue', Helvetica, sans-serif", weight: 800 },
       background: 'accent-1',
-      extend: "font-family: 'Roboto, Helvetica, sans-serif'; text-transform: uppercase;",
     },
+    extend: "font-family: Roboto, Helvetica, sans-serif; text-transform: uppercase;",
     disabled: {
       opacity: 0.3,
     },
@@ -255,7 +255,7 @@ export default {
     },
     default: {
       font: { family: "Roboto, 'Helvetica Neue', Helvetica, sans-serif" },
-      extend: "font-family: 'Roboto, Helvetica, sans-serif'; text-transform: uppercase;",
+      extend: "font-family: Roboto, Helvetica, sans-serif; text-transform: uppercase;",
     },
   },
   calendar: {
@@ -480,55 +480,59 @@ export default {
       1: {
         font: { family: 'Martel, serif' },
         small: {
-          size: '34px',
-          height: '40px',
+          size: '14px',
+          height: '18px',
           maxWidth: '100%',
           margin: 0,
           pad: 0,
         },
         medium: {
-          size: '50px',
-          height: '56px',
+          size: '20px',
+          height: '24px',
           maxWidth: '100%',
           margin: 0,
           pad: 0,
         },
         large: {
-          size: '82px',
-          height: '88px',
+          size: '30px',
+          height: '36px',
           maxWidth: '100%',
           margin: 0,
           pad: 0,
         },
         xlarge: {
-          size: '114px',
-          height: '120px',
+          size: '30px',
+          height: '36px',
           maxWidth: '100%',
           margin: 0,
           pad: 0,
         },
       },
       2: {
-        font: {},
+        font: { family: 'Martel, serif' },
         small: {
-          size: '26px',
-          height: '32px',
+          size: '12px',
+          height: '14px',
           maxWidth: '100%',
         },
         medium: {
-          size: '34px',
-          height: '40px',
+          size: '14px',
+          height: '18px',
           maxWidth: '100%',
         },
         large: {
-          size: '50px',
-          height: '56px',
+          size: '20px',
+          height: '24px',
           maxWidth: '100%',
+          margin: 0,
+          pad: 0,
         },
         xlarge: {
-          size: '66px',
-          height: '72px',
+          size: '20px',
+          height: '24px',
           maxWidth: '100%',
+          margin: 0,
+          pad: 0,
         },
       },
       3: {
@@ -648,6 +652,11 @@ export default {
     color: 'accent-1',
   },
   paragraph: {
+    xsmall: {
+      size: '10px',
+      height: '20px',
+      maxWidth: '100%',
+    },
     small: {
       size: '14px',
       height: '20px',
@@ -809,13 +818,13 @@ export default {
       maxWidth: '100%',
     },
     small: {
-      size: '14px',
-      height: '20px',
+      size: '12px',
+      height: '14px',
       maxWidth: '100%',
     },
     medium: {
-      size: '18px',
-      height: '24px',
+      size: '14px',
+      height: '20px',
       maxWidth: '100%',
     },
     large: {

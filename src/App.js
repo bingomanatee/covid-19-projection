@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import PageHeader from './PageHeader';
 import './styles.css';
 import {
   Grommet,
@@ -7,7 +8,7 @@ import {
   Main,
   Heading,
   Header,
-  Paragraph, Grid, Layer,
+  Paragraph, Grid, Layer, ResponsiveContext,
 } from 'grommet';
 import Loader from 'react-loader-spinner';
 import theme from './theme';
@@ -43,40 +44,10 @@ export default function App() {
 
     return () => sub.unsubscribe();
   }, []);
-
   return (
     <Grommet theme={theme}>
       <Grid rows={['auto', '1fr']} fill="true">
-        <Header background="neutral-3">
-          <Box
-            direction="row"
-            justify="between"
-            fill="horizontal"
-          >
-            <Button
-              label="COVID-19 Mortality"
-              onClick={() => store.do.setPage('mortality')}
-            />
-            <Button
-              label="COVID-19 Cases"
-              onClick={() => store.do.setPage('cases')}
-            />
-            <Box flex="1" />
-            <Button
-              label="Summary Table"
-              onClick={() => {
-                store.do.setPage('data');
-              }}
-            />
-            <Button
-              label="About This Page"
-              onClick={() => {
-                store.do.setPage('about');
-              }}
-            />
-          </Box>
-
-        </Header>
+        <PageHeader />
         <Main id="main-item" align="center" background="neutral-3" align="stretch" overflow="hidden">
           <Content />
         </Main>
