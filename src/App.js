@@ -19,27 +19,10 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    const sub = store.subscribe((map) => {
-      let loadStatus = null;
-
-      switch (map.get('page')) {
-        case 'home':
-          loadStatus = map.get('rawDataLoadStatus');
-          if (loadStatus === 'not loaded') store.do.loadData();
-          break;
-
-        case 'cases':
-          loadStatus = map.get('rawCaseDataLoadStatus');
-          if (loadStatus === 'not loaded') store.do.loadCaseData();
-          break;
-      }
-
-      console.log('load Status:', loadStatus);
-      if (loadStatus) {
-        const newIsLoading = loadStatus !== 'loaded';
-        console.log('newIsLoading', newIsLoading);
-        setIsLoading(newIsLoading);
-      }
+    const sub = store.subscribe(() => {
+      const loading = store.do.dataIsLoading();
+      console.log('---- APP: loading is ', loading);
+      setIsLoading(loading);
     });
 
     return () => sub.unsubscribe();
@@ -48,7 +31,7 @@ export default function App() {
     <Grommet theme={theme}>
       <Grid rows={['auto', '1fr']} fill="true">
         <PageHeader />
-        <Main id="main-item" align="center" background="neutral-3" align="stretch" overflow="hidden">
+        <Main id="main-item" background="neutral-3" align="stretch" overflow="hidden">
           <Content />
         </Main>
         {isLoading && (

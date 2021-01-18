@@ -1,22 +1,12 @@
 /* eslint-disable no-param-reassign */
-import React, { useState, useRef, useEffect } from 'react';
-import { Box } from 'grommet';
+import React, {
+  useState, useRef, useEffect, useContext,
+} from 'react';
+import { Box, ResponsiveContext } from 'grommet';
 import sizeMe from 'react-sizeme';
-import dayjs from 'dayjs';
 import SVG from 'svg.js';
-import store from './store';
-import makeGraphStore from './makeCaseGraphStore';
 import DateRep from './DateRep';
-
-const formatDate = (date, long) => {
-  if (!date) return '';
-  if ((!(date instanceof Date)) && date.date) return formatDate(date.date, long);
-
-  if (long) return dayjs(date).format('D, MMM YYYY');
-  return dayjs(date).format('MMM D YY');
-};
-
-const CASE_COLOR = '#27c507';
+import makeCaseGraphStore from './makeCaseGraphStore';
 
 const CaseGraph = ({ size }) => {
   const [value, setValue] = useState(new Map());
@@ -25,6 +15,8 @@ const CaseGraph = ({ size }) => {
   const [readyToDraw, setRTD] = useState(false);
   const [firstTime, setFT] = useState(0);
   const [lastTime, setLT] = useState(0);
+
+  const pageSize = useContext(ResponsiveContext);
 
   const boxRef = useRef();
   const { width, height } = size;
@@ -37,20 +29,22 @@ const CaseGraph = ({ size }) => {
     ) {
       graphStore.do.setWidth(width);
       graphStore.do.setHeight(height);
-      graphStore.do.drawGraph();
     }
-  }, [width, height, graphStore]);
+    if (boxRef.current !== graphStore.my.svgDiv) {
+      graphStore.do.setSvgDiv(boxRef.current);
+      const svg = SVG(boxRef.current);
+      if (!graphStore.my.svg) {
+        graphStore.do.setSvg(svg);
+        svg.on('mousemove', (event) => {
+          const { offsetX, offsetY } = event;
+          graphStore.do.onMouseMove(offsetX, offsetY);
+        });
+      }
+    }
+  }, [width, height, graphStore, boxRef.current]);
 
   useEffect(() => {
-    const sub = store.subscribe((map) => {
-      setValue(store.object);
-      const loadStatus = map.get('rawCaseDataLoadStatus');
-      console.log('case rawDataCaseLoadStatus', loadStatus);
-      const rtd = loadStatus === 'loaded';
-      setRTD(rtd);
-    });
-    console.log('Case graph: ready to draw: ', readyToDraw);
-    const newGraphStore = makeGraphStore(width, height, boxRef);
+    const newGraphStore = makeCaseGraphStore(width, height, pageSize);
     const gsSub = newGraphStore.subscribe((map) => {
       if (map.get('firstTime') !== firstTime) setFT(map.get('firstTime'));
       if (map.get('lastTime') !== lastTime) setLT(map.get('lastTime'));
@@ -58,7 +52,6 @@ const CaseGraph = ({ size }) => {
     setGS(newGraphStore);
 
     return () => {
-      sub.unsubscribe();
       gsSub.unsubscribe();
     };
   }, []);
@@ -69,29 +62,22 @@ const CaseGraph = ({ size }) => {
     }
     if (width !== graphStore.my.width) graphStore.do.setWidth(width);
     if (height !== graphStore.my.height) graphStore.do.setHeight(height);
-    graphStore.do.drawGraph();
-  }, [graphStore, width, height]);
 
-  useEffect(() => {
-    if (!graphStore) return;
-    if (readyToDraw && boxRef.current) {
-      if (boxRef.current !== graphStore.my.svgDiv) {
-        graphStore.do.setSvgDiv(boxRef.current);
-        const svg = SVG(boxRef.current);
-        if (!graphStore.my.svg) {
-          graphStore.do.setSvg(svg);
-          svg.on('mousemove', (event) => {
-            const { offsetX, offsetY } = event;
-            graphStore.do.onMouseMove(offsetX, offsetY);
-          });
-        }
-        console.log('drawGraph!!!!');
-        graphStore.do.drawGraph();
+    if (boxRef.current !== graphStore.my.svgDiv) {
+      graphStore.do.setSvgDiv(boxRef.current);
+      const svg = SVG(boxRef.current);
+      if (!graphStore.my.svg) {
+        graphStore.do.setSvg(svg);
+        svg.on('mousemove', (event) => {
+          const { offsetX, offsetY } = event;
+          graphStore.do.onMouseMove(offsetX, offsetY);
+        });
       }
-    } else {
-      console.log('readyToDraw: ', readyToDraw);
     }
-  }, [graphStore, boxRef.current, readyToDraw]);
+    if (graphStore) {
+      graphStore.do.drawGraph();
+    }
+  }, [graphStore, width, height, pageSize]);
 
   return (
     <Box flex="1" border={{ width: '1px', color: 'brand' }} height="100%" background="white">

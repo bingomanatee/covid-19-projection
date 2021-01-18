@@ -11,6 +11,7 @@ export default class DexieReport extends Component {
     this.state = {
       rawDataLoadStatus: store.my.rawDataLoadStatus,
       states: store.my.states,
+      summary: [],
     };
   }
 
@@ -19,9 +20,14 @@ export default class DexieReport extends Component {
       if (map.get('rawDataLoadStatus') !== this.state.rawDataLoadStatus) {
         this.setState({
           rawDataLoadStatus: map.get('rawDataLoadStatus'),
+        });
+      }
+      if (this.state.states !== store.my.states) {
+        this.setState({
           states: map.get('states'),
         });
-
+      }
+      if (!this.state.summary.length) {
         if (store.my.rawDataLoadStatus === 'loaded') {
           store.do.summary()
             .then((summary) => this.setState({ summary }));
@@ -39,11 +45,7 @@ export default class DexieReport extends Component {
     return (
       <Box pad="medium" overflow="auto">
         <H level={1}>Total Deaths</H>
-        <P>
-          Load Status:
-          <i>{rawDataLoadStatus}</i>
-        </P>
-        {summary && (
+        {summary.length ? (
           <>
             <H level={2}>Death Totals</H>
             <DataTable
@@ -60,7 +62,7 @@ export default class DexieReport extends Component {
               ]}
             />
           </>
-        )}
+        ) : ''}
         {(states && states.length) ? (
           <>
             <H level={2}>By State</H>

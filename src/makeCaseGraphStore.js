@@ -1,11 +1,11 @@
 /* eslint-disable no-param-reassign */
-import debounce from 'lodash/debounce';
-import throttle from 'lodash/throttle';
+
 import { ValueMapStream, addActions } from '@wonderlandlabs/looking-glass-engine';
 import sortBy from 'lodash/sortBy';
 import clamp from 'lodash/clamp';
 import humNum from 'humanize-number';
 import dayjs from 'dayjs';
+import SVG from 'svg.js';
 import lerp from 'lerp';
 import chunk from 'lodash/chunk';
 import store from './store';
@@ -48,8 +48,8 @@ function within1(a, b) {
   return Math.abs(a - b) <= 1;
 }
 
-export default function makeCaseGraphStore(width, height) {
-  return addActions(new ValueMapStream({
+export default function makeCaseGraphStore(width, height, pageSize) {
+  const caseGraphStore = addActions(new ValueMapStream({
     data: [],
     lineDrawn: false,
     polyline: null,
@@ -65,16 +65,16 @@ export default function makeCaseGraphStore(width, height) {
     aYearFromNow: {},
     height,
     width,
+    pageSize,
+    readyToDraw: store.my.rawDataLoadStatus === 'loaded',
     xScale: 1,
     yScale: 1,
     maxDeaths: 100,
+    drawnAt: '',
     coordinates: [],
   }), {
     orderedDates(gs, useExt) {
       return store.do.orderedDates(useExt);
-    },
-    sumData(gs) {
-      gs.do.drawGraph();
     },
     drawDates(gs) {
       const oDates = gs.do.orderedDates().concat(gs.do.orderedDates(true));
@@ -268,6 +268,15 @@ export default function makeCaseGraphStore(width, height) {
       if (!coord) return;
       gs.my.cursor.x(x).y(coord.y);
     },
+    deathInc(gs) {
+      if (gs.my.height < 600) {
+        return DEATH_INC * 4;
+      }
+      if (gs.my.height < 800) {
+        return DEATH_INC * 2;
+      }
+      return DEATH_INC;
+    },
     drawGrid(gs) {
       const grid = gs.my.svg.group();
 
@@ -290,7 +299,7 @@ export default function makeCaseGraphStore(width, height) {
           family: 'Martel, sans-serif',
         });
 
-      for (let deaths = DEATH_INC; deaths < gs.my.maxDeaths; deaths += DEATH_INC) {
+      for (let deaths = gs.do.deathInc(); deaths < gs.my.maxDeaths; deaths += gs.do.deathInc()) {
         const y = dy(deaths);
         grid.line(-10, y, gs.my.width + 10, y)
           .stroke({
@@ -337,24 +346,71 @@ export default function makeCaseGraphStore(width, height) {
           .cx(x)
           .y(5);
 
-        date.setMonth(date.getMonth() + 2);
+        date.setMonth(date.getMonth() + gs.do.monthSpan());
       }
     },
+    monthSpan(gs) {
+      if (gs.my.width > 1400) {
+        return 1;
+      }
+      if (gs.my.width < 800) {
+        return 4;
+      }
+      return 2;
+    },
+    sizeStamp(gs) {
+      return `${gs.my.width},${gs.my.height}`;
+    },
     async drawGraph(gs) {
-      if (gs.my.drawing || (!gs.my.svg)) {
+      console.log('========================= awGraph ---- caseGraph ', gs.object);
+      if (gs.my.drawing) {
+        console.log('---- caseGraph cannot draw -- already drawing');
         return;
       }
-      gs.do.setDrawing(true);
-      gs.my.svg.clear();
-      gs.my.svg.size(gs.my.width, gs.my.height);
-      if (gs.my.width < 200 || gs.my.height < 200) return;
-      if (store.my.rawDataLoadStatus === 'loaded') {
+      if (!gs.my.svg) {
+        console.log('--- caseGraph cannot draw -- no svg');
+        return;
+      }
+      if (!gs.my.readyToDraw) {
+        console.log('--- caseGraph cannot draw; no t ready (store)');
+        return;
+      }
+
+      if (gs.my.drawnAt === gs.do.sizeStamp()) {
+        console.log('--- caseGraph cannot draw; already drawn at size', gs.my.drawnAt);
+        return;
+      }
+      console.log('---- caseGraph really drawing ', gs.my.width, gs.my.height);
+      let drawingSize = gs.do.sizeStamp();
+      do {
+        drawingSize = gs.do.sizeStamp();
+        gs.do.setDrawing(true);
+        gs.my.svg.remove();
+        gs.do.setSvg(SVG(gs.my.svgDiv));
+        gs.my.svg.size(gs.my.width, gs.my.height);
+        if (gs.my.width < 200 || gs.my.height < 200) return;
         await gs.do.projectTime();
         gs.do.drawGrid();
         gs.do.drawLine();
         gs.do.drawCursor();
-      }
+        gs.do.setDrawnAt(gs.do.sizeStamp());
+      } while (drawingSize !== gs.do.sizeStamp());
+      console.log('---- done drawing ', gs.my.width, gs.my.height);
       gs.do.setDrawing(false);
     },
   });
+
+  const sub = store.subscribe((map) => {
+    const rtd = map.get('rawDataLoadStatus') === 'loaded';
+    if (rtd !== caseGraphStore.my.readyToDraw) {
+      caseGraphStore.do.setReadyToDraw(rtd);
+     if (rtd)  caseGraphStore.do.drawGraph();
+    }
+  });
+
+  caseGraphStore.subscribe({
+    complete: () => sub.unsubscribe(),
+  });
+
+  return caseGraphStore;
 }

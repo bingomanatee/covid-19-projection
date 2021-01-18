@@ -1,12 +1,16 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 
 import {
   Paragraph as P, Heading as H, markdown, Grid, Box, Footer, ResponsiveContext,
 } from 'grommet';
 import Graph from './Graph';
 import GraphFooter from './GraphFooter';
+import store from "./store";
 
 export default () => {
+  useEffect(() => {
+    if (store.my.rawDataLoadStatus === 'not loaded') store.do.loadData();
+  }, []);
   const pageSize = useContext(ResponsiveContext);
   const textSize = (pageSize === 'small' || pageSize === 'xsmall') ? 'small' : 'medium';
   return (

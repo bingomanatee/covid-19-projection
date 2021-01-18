@@ -6,31 +6,15 @@ import {
   Box, Header, Paragraph as P, ResponsiveContext,
 } from 'grommet';
 import sizeMe from 'react-sizeme';
-import dayjs from 'dayjs';
 import SVG from 'svg.js';
-import debounce from 'lodash/debounce';
-import { ValueMapStream, addActions } from '@wonderlandlabs/looking-glass-engine';
-import sortBy from 'lodash/sortBy';
-import clamp from 'lodash/clamp';
-import humNum from 'humanize-number';
-import store from './store';
 import makeGraphStore from './makeGraphStore';
 import DateRep from './DateRep';
-
-const formatDate = (date, long) => {
-  if (!date) return '';
-  if ((!(date instanceof Date)) && date.date) return formatDate(date.date, long);
-
-  if (long) return dayjs(date).format('D, MMM YYYY');
-  return dayjs(date).format('MMM D YY');
-};
-
-const DEATH_COLOR = '#f06';
 
 const Graph = ({ size }) => {
   const [value, setValue] = useState(new Map());
   const [graphStore, setGS] = useState(null);
-  const [dates, setDates] = useState(new Map());
+
+  const [readyToDraw, setRTD] = useState(false);
   const [firstTime, setFT] = useState(0);
   const [lastTime, setLT] = useState(0);
 
@@ -41,14 +25,10 @@ const Graph = ({ size }) => {
 
   useEffect(() => {
     if (!graphStore) return;
-    if (
-      (width !== graphStore.my.width)
-      || (graphStore.my.size !== size)
-     || (height !== graphStore.my.height)
-    ) {
-      graphStore.do.setWidth(width);
-      graphStore.do.setHeight(height);
-    }
+
+    if (width !== graphStore.my.width) graphStore.do.setWidth(width);
+    if (height !== graphStore.my.height) graphStore.do.setHeight(height);
+
     if (boxRef.current !== graphStore.my.svgDiv) {
       graphStore.do.setSvgDiv(boxRef.current);
       const svg = SVG(boxRef.current);
@@ -67,7 +47,6 @@ const Graph = ({ size }) => {
     const gsSub = newGraphStore.subscribe((map) => {
       if (map.get('firstTime') !== firstTime) setFT(map.get('firstTime'));
       if (map.get('lastTime') !== lastTime) setLT(map.get('lastTime'));
-      newGraphStore.do.drawGraph();
     });
     setGS(newGraphStore);
 
@@ -77,14 +56,12 @@ const Graph = ({ size }) => {
   }, []);
 
   useEffect(() => {
-    console.log('graph page size: ', pageSize);
     if (!(graphStore && graphStore.my.svg && height && width)) {
       return;
     }
     if (width !== graphStore.my.width) graphStore.do.setWidth(width);
     if (height !== graphStore.my.height) graphStore.do.setHeight(height);
     if (graphStore && (pageSize !== graphStore.my.pageSize)) graphStore.do.setPageSize(pageSize);
-    graphStore.do.drawGraph();
   }, [graphStore, width, height, pageSize]);
 
   return (

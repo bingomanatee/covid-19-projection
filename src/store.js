@@ -7,9 +7,8 @@ import getDeathData from './getDeathData';
 import StateData from './StateData';
 import CaseStateData from './CaseStateData';
 import DateRep from './DateRep';
-import { deathsAtTime } from './db';
-import { casesAtTime } from './caseDb';
-import getCaseData from "./getCaseData";
+import { db } from './db';
+import getCaseData from './getCaseData';
 
 const currentPage = 'home';
 const store = addActions(new ValueMapStream({
@@ -28,6 +27,19 @@ const store = addActions(new ValueMapStream({
       dates,
       rows: ss.my.states,
     };
+  },
+
+  dataIsLoading(ss) {
+    switch (ss.my.page) {
+      case 'home':
+        return ss.my.rawDataLoadStatus !== 'loaded';
+        break;
+
+      case 'cases':
+        return ss.my.rawCaseDataLoadStatus !== 'loaded';
+        break;
+    }
+    return false;
   },
 
   firstOfMonths(ss) {
@@ -87,7 +99,7 @@ const store = addActions(new ValueMapStream({
       ss.do.setRawCaseDataLoadStatus('loaded');
     }
   },
-/*  async summary() {
+  async summary() {
     const byTime = new Map();
     try {
       await db.deaths.each((record) => {
@@ -109,7 +121,7 @@ const store = addActions(new ValueMapStream({
         return dr.toMonthString();
       });
 
-      return [...Object.keys(byMonth)]
+      const summary = [...Object.keys(byMonth)]
         .map((monthYear) => {
           const deaths = byMonth[monthYear];
           return {
@@ -117,11 +129,13 @@ const store = addActions(new ValueMapStream({
             monthYear,
           };
         });
+      console.log('summary:', summary);
+      return summary;
     } catch (err) {
       console.log('summary error: ', err);
       return [];
     }
-  }, */
+  },
 });
 
 export default store;

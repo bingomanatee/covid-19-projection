@@ -48,7 +48,7 @@ function within1(a, b) {
   return Math.abs(a - b) <= 1;
 }
 
-export default function makeGraphStore(width, height, pageSize, boxRef) {
+export default function makeGraphStore(width, height, pageSize) {
   const graphStore = addActions(new ValueMapStream({
     data: [],
     lineDrawn: false,
@@ -404,7 +404,7 @@ export default function makeGraphStore(width, height, pageSize, boxRef) {
     const rtd = map.get('rawDataLoadStatus') === 'loaded';
     if (rtd !== graphStore.my.readyToDraw) {
       graphStore.do.setReadyToDraw(rtd);
-      graphStore.do.drawGraph();
+      if (rtd) graphStore.do.drawGraph();
     }
   });
 
