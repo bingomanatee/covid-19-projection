@@ -46,27 +46,27 @@ export default class DexieReport extends Component {
       <Box pad="medium" overflow="auto">
         <H level={1}>Total Deaths</H>
         {summary.length ? (
-          <>
-            <H level={2}>Death Totals</H>
-            <DataTable
-              data={summary}
-              columns={[
-                { property: 'monthYear', header: 'Month/Year' },
-                {
-                  property: 'deaths',
-                  header: 'Deaths',
-                  align: 'end',
+          <DataTable
+            margin="medium"
+            data={summary}
+            columns={[
+              { property: 'monthYear', header: 'Month/Year' },
+              {
+                property: 'deaths',
+                header: 'Deaths',
+                align: 'end',
 
-                  render: ({ deaths }) => humNum(deaths),
-                },
-              ]}
-            />
-          </>
+                render: ({ deaths }) => humNum(deaths),
+              },
+            ]}
+          />
         ) : ''}
+        <Box pad="medium">&nbsp;</Box>
+        <H level={1}>By State</H>
         {(states && states.length) ? (
           <>
-            <H level={2}>By State</H>
             <DataTable
+              margin="medium"
               height="400"
               columns={[
                 { property: 'state', heading: 'State' },

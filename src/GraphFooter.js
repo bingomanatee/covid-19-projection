@@ -2,11 +2,14 @@ import { Paragraph as P } from 'grommet/components/Paragraph';
 import { Footer, ResponsiveContext } from 'grommet';
 import React, { useContext } from 'react';
 
-export default () => {
+export default ({full}) => {
   const pageSize = useContext(ResponsiveContext);
-  const textSize = (pageSize === 'small' || pageSize === 'xsmall') ? 'xsmall' : 'small';
+  let textSize = (pageSize === 'small' || pageSize === 'xsmall') ? 'xsmall' : 'small';
+  if (full) {
+    textSize = (pageSize === 'small' || pageSize === 'xsmall') ? 'small' : 'medium';
+  }
   return (
-    <Footer pad="small">
+    <Footer pad={full ? 0 : 'small'}>
       <P size={textSize} textAlgin="center">
         The code used to build this projection is at
         <a

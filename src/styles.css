@@ -44,3 +44,10 @@ h1, h2, h3, h4 {
   bottom: 0;
   padding: 0.5rem;
 }
+
+a {
+  display: inline-block;
+  margin: 0 0.5rem;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  color: #f06 !important;
+}

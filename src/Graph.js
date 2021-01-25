@@ -26,8 +26,14 @@ const Graph = ({ size }) => {
   useEffect(() => {
     if (!graphStore) return;
 
-    if (width !== graphStore.my.width) graphStore.do.setWidth(width);
-    if (height !== graphStore.my.height) graphStore.do.setHeight(height);
+    if (
+      (width !== graphStore.my.width)
+      || (height !== graphStore.my.height)
+    ) {
+      graphStore.do.setWidth(width);
+      graphStore.do.setHeight(height);
+      graphStore.do.drawGraph();
+    }
 
     if (boxRef.current !== graphStore.my.svgDiv) {
       graphStore.do.setSvgDiv(boxRef.current);
@@ -39,6 +45,10 @@ const Graph = ({ size }) => {
           graphStore.do.onMouseMove(offsetX, offsetY);
         });
       }
+    }
+
+    if (graphStore) {
+      graphStore.do.drawGraph();
     }
   }, [width, height, graphStore, boxRef.current]);
 

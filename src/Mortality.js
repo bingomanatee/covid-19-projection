@@ -28,7 +28,7 @@ export default () => {
           a month ago to the current total.
         </P>
       </Box>
-      <Box pad="small">
+      <Box pad="small" overflow="hidden">
         <Graph />
         {' '}
       </Box>

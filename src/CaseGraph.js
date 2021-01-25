@@ -60,8 +60,13 @@ const CaseGraph = ({ size }) => {
     if (!(graphStore && graphStore.my.svg && height && width)) {
       return;
     }
-    if (width !== graphStore.my.width) graphStore.do.setWidth(width);
-    if (height !== graphStore.my.height) graphStore.do.setHeight(height);
+    if (
+      (width !== graphStore.my.width)
+      || (height !== graphStore.my.height)
+    ) {
+      graphStore.do.setWidth(width);
+      graphStore.do.setHeight(height);
+    }
 
     if (boxRef.current !== graphStore.my.svgDiv) {
       graphStore.do.setSvgDiv(boxRef.current);
