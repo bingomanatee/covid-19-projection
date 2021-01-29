@@ -124,7 +124,7 @@ export default function makeCaseGraphStore(width, height, pageSize) {
       const coordinates = times.map((time, index) => ({ t: time, d: timeDeaths[index] }));
 
       const latest = coordinates[coordinates.length - 1];
-      const monthAgo = coordinates.reduce((then, c, index) => {
+      const monthAgo = coordinates.reduce((then, c) => {
         if (c.t + A_MONTH_AGO_MS > latest.t) return then;
         return c;
       }, [0, 0]);
@@ -380,6 +380,8 @@ export default function makeCaseGraphStore(width, height, pageSize) {
         console.log('--- caseGraph cannot draw; already drawn at size', gs.my.drawnAt);
         return;
       }
+      const times = await getTimes();
+      if (!times.length) return;
       console.log('---- caseGraph really drawing ', gs.my.width, gs.my.height);
       let drawingSize = gs.do.sizeStamp();
       do {
