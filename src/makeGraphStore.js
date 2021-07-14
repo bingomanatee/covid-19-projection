@@ -71,6 +71,7 @@ export default function makeGraphStore(width, height, pageSize) {
     yScale: 1,
     maxDeaths: 100,
     drawnAt: '',
+    drawn: false,
     coordinates: [],
   }), {
     orderedDates(gs, useExt) {
